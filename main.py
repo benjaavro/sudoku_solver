@@ -19,10 +19,11 @@ class ConsoleFormats:
 
 
 class SudokuStateNode:
-    def __init__(self, sudoku_state, children, parent):
+    def __init__(self, sudoku_state, children, parent, mvc):
         self.sudoku_state = sudoku_state
         self.children = children
         self.parent = parent
+        self.mvc = mvc
 
     def fill_empty_variables(self):
         for y in range(PUZZLE_SIZE):
@@ -90,10 +91,17 @@ class SudokuStateNode:
         new_node.wipe_matches_on_column(column_index)
         new_node.wipe_matches_on_block(row_index, column_index)
 
-    def forward_check_wiping(self):
+    def forward_check_wiping_and_mvc(self):
+        smallest_list = copy.deepcopy(SUDOKU_DOMAIN)
+
         for x in range(PUZZLE_SIZE):
             for y in range(PUZZLE_SIZE):
                 self.wipe_matches_for_position(x, y)
+                aux_list = self.sudoku_state[x][y]
+
+                if len(smallest_list) > len(aux_list) > 1:
+                    smallest_list = aux_list
+                    self.mvc = [x, y]
 
     def print_state_variables_domain(self):
         for x in range(PUZZLE_SIZE):
@@ -167,9 +175,9 @@ def print_formatted_sudoku(matrix, solved):
 
 sudoku_matrix = create_sudoku_matrix_from_csv()
 
-new_node = SudokuStateNode(sudoku_matrix, [], None)
+new_node = SudokuStateNode(sudoku_matrix, [], None, None)
 # print_formatted_sudoku(new_node.sudoku_state, 0)
 
 new_node.fill_empty_variables()
-new_node.forward_check_wiping()
-new_node.print_state_variables_domain()
+new_node.forward_check_wiping_and_mvc()
+# new_node.print_state_variables_domain()
