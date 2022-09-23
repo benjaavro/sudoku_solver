@@ -10,7 +10,8 @@ RANGE_2 = [3, 4, 5]
 RANGE_3 = [6, 7, 8]
 
 column_names = range(PUZZLE_SIZE)
-sudoku_from_csv = pd.read_csv("Sudoku - Canva.csv", names=column_names)
+sudoku_from_csv = pd.read_csv("Sudoku - World Hardest Sudoku.csv", names=column_names)
+possible_answers_attempts = 0
 
 
 class ConsoleFormats:
@@ -24,6 +25,7 @@ class SudokuStateNode:
         self.children = children
         self.parent = parent
         self.mvc = mvc
+        self.fill_empty_variables()
 
     def fill_empty_variables(self):
         for y in range(PUZZLE_SIZE):
@@ -75,6 +77,7 @@ class SudokuStateNode:
             for y in column_range:
                 if len(self.sudoku_state[x][y]) == 1:
                     wiping_number = self.sudoku_state[x][y][0]
+                    # print("Removing " + str(wiping_number) + " from block " + str(row_range) + "," + str(column_range))
 
                     for aux_x in row_range:
                         for aux_y in column_range:
@@ -85,28 +88,87 @@ class SudokuStateNode:
                                     aux_list.remove(wiping_number)
                                     self.sudoku_state[aux_x][aux_y] = aux_list
 
-    @staticmethod
-    def wipe_matches_for_position(row_index, column_index):
-        new_node.wipe_matches_on_row(row_index)
-        new_node.wipe_matches_on_column(column_index)
-        new_node.wipe_matches_on_block(row_index, column_index)
-
-    def forward_check_wiping_and_mvc(self):
-        smallest_list = copy.deepcopy(SUDOKU_DOMAIN)
-
-        for x in range(PUZZLE_SIZE):
-            for y in range(PUZZLE_SIZE):
-                self.wipe_matches_for_position(x, y)
-                aux_list = self.sudoku_state[x][y]
-
-                if len(smallest_list) > len(aux_list) > 1:
-                    smallest_list = aux_list
-                    self.mvc = [x, y]
+    def wipe_matches_for_position(self, row_index, column_index):
+        self.wipe_matches_on_row(row_index)
+        self.wipe_matches_on_column(column_index)
+        self.wipe_matches_on_block(row_index, column_index)
 
     def print_state_variables_domain(self):
         for x in range(PUZZLE_SIZE):
             for y in range(PUZZLE_SIZE):
                 print("Domain for " + str(x) + "," + str(y) + " --> " + str(self.sudoku_state[x][y]))
+
+    def forward_check(self):
+        global possible_answers_attempts
+
+        solved_puzzle_flag = 1
+        smallest_list = copy.deepcopy(SUDOKU_DOMAIN)
+
+        for x in range(PUZZLE_SIZE):
+            for y in range(PUZZLE_SIZE):
+                self.wipe_matches_for_position(x, y)
+                # print(x, ",", y, "-->", self.sudoku_state[x][y])
+
+                if len(self.sudoku_state[x][y]) == 0:
+                    # print("Found empty variable at " + str(x) + "," + str(y))
+                    solved_puzzle_flag = 2
+
+                elif len(self.sudoku_state[x][y]) > 1 and solved_puzzle_flag != 0:
+                    solved_puzzle_flag = 0
+
+                if 1 < len(self.sudoku_state[x][y]) < len(smallest_list):
+                    smallest_list = copy.deepcopy(self.sudoku_state[x][y])
+                    self.mvc = [x, y]
+
+        # Puzzle solution is found
+        if solved_puzzle_flag == 1:
+            print_formatted_sudoku(self.sudoku_state, 1)
+            return solved_puzzle_flag
+
+        elif solved_puzzle_flag == 0:
+            for value in smallest_list:
+                # Increase attempts number
+                possible_answers_attempts += 1
+
+                # Assign option value to puzzle in MVC position
+                sudoku_matrix_aux = copy.deepcopy(self.sudoku_state)
+                sudoku_matrix_aux[self.mvc[0]][self.mvc[1]] = [value]
+
+                # Create a node for option in domain
+                option_node = SudokuStateNode(sudoku_matrix_aux, [], self, None)
+
+                # Add option node to current node children list
+                self.children.append(option_node)
+
+                # Do Forward Checking and evaluate if puzzle is completed for current option node
+                solved_puzzle_flag = option_node.forward_check()
+                if solved_puzzle_flag == 1:
+                    break
+                if self.parent is None and solved_puzzle_flag == 2:
+                    print("No possible solution")
+                    break
+
+        return solved_puzzle_flag
+
+    def expand_options_for_mvc(self):
+        return
+
+
+def check_if_solved_puzzle(sudoku_matrix_state):
+    solved = 1  # Puzzle is solved
+    for x in range(PUZZLE_SIZE):
+        for y in range(PUZZLE_SIZE):
+            # Puzzle still not solved
+            if len(sudoku_matrix_state[x][y]) > 1:
+                solved = 0
+                break
+
+            # Empty variables are not allowed, not possible answer
+            if len(sudoku_matrix_state[x][y]) == 0:
+                solved = 2
+                break
+
+    return solved
 
 
 def get_range_for_index(index):
@@ -173,11 +235,16 @@ def print_formatted_sudoku(matrix, solved):
     print()
 
 
+# Create sudoku puzzle from CSV file
 sudoku_matrix = create_sudoku_matrix_from_csv()
 
-new_node = SudokuStateNode(sudoku_matrix, [], None, None)
-# print_formatted_sudoku(new_node.sudoku_state, 0)
+# Print unsolved sudoku puzzle
+print_formatted_sudoku(sudoku_matrix, 0)
 
-new_node.fill_empty_variables()
-new_node.forward_check_wiping_and_mvc()
-# new_node.print_state_variables_domain()
+# Create root node with initial sudoku state
+new_node = SudokuStateNode(sudoku_matrix, [], None, None)
+
+# Solve puzzle
+new_node.forward_check()
+
+print("Attempted " + str(possible_answers_attempts) + " times to solve puzzle")
