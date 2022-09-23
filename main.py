@@ -1,6 +1,7 @@
 import copy
 import math
 import pandas as pd
+from time import time
 
 PUZZLE_REGION_SIZE = 3
 PUZZLE_SIZE = PUZZLE_REGION_SIZE * PUZZLE_REGION_SIZE
@@ -10,7 +11,13 @@ RANGE_2 = [3, 4, 5]
 RANGE_3 = [6, 7, 8]
 
 column_names = range(PUZZLE_SIZE)
-sudoku_from_csv = pd.read_csv("Sudoku - World Hardest Sudoku.csv", names=column_names)
+# sudoku_from_csv = pd.read_csv("Sudoku - Solved.csv", names=column_names)
+sudoku_from_csv = pd.read_csv("Sudoku - Canva.csv", names=column_names)
+# sudoku_from_csv = pd.read_csv("Sudoku - Easy.csv", names=column_names)
+# sudoku_from_csv = pd.read_csv("Sudoku - Medium.csv", names=column_names)  # Fail
+# sudoku_from_csv = pd.read_csv("Sudoku - Hard.csv", names=column_names)  # Fail
+# sudoku_from_csv = pd.read_csv("Sudoku - Evil.csv", names=column_names)  # Fail
+# sudoku_from_csv = pd.read_csv("Sudoku - World Hardest Sudoku.csv", names=column_names)
 possible_answers_attempts = 0
 
 
@@ -122,6 +129,7 @@ class SudokuStateNode:
 
         # Puzzle solution is found
         if solved_puzzle_flag == 1:
+            # Print puzzle solution
             print_formatted_sudoku(self.sudoku_state, 1)
             return solved_puzzle_flag
 
@@ -149,26 +157,6 @@ class SudokuStateNode:
                     break
 
         return solved_puzzle_flag
-
-    def expand_options_for_mvc(self):
-        return
-
-
-def check_if_solved_puzzle(sudoku_matrix_state):
-    solved = 1  # Puzzle is solved
-    for x in range(PUZZLE_SIZE):
-        for y in range(PUZZLE_SIZE):
-            # Puzzle still not solved
-            if len(sudoku_matrix_state[x][y]) > 1:
-                solved = 0
-                break
-
-            # Empty variables are not allowed, not possible answer
-            if len(sudoku_matrix_state[x][y]) == 0:
-                solved = 2
-                break
-
-    return solved
 
 
 def get_range_for_index(index):
@@ -213,7 +201,7 @@ def print_formatted_sudoku(matrix, solved):
     if solved == 1:
         print("\n\n******** SOLVED SUDOKU PUZZLE *******")
     else:
-        print("\n\n****** UNSOLVED SUDOKU PUZZLE *******")
+        print("\n\n******* INITIAL SUDOKU PUZZLE *******")
 
     for y in range(PUZZLE_SIZE):
         for char in range(PUZZLE_SIZE):
@@ -241,10 +229,19 @@ sudoku_matrix = create_sudoku_matrix_from_csv()
 # Print unsolved sudoku puzzle
 print_formatted_sudoku(sudoku_matrix, 0)
 
+# Initialize timer for solution
+start_time = time()
+
 # Create root node with initial sudoku state
 new_node = SudokuStateNode(sudoku_matrix, [], None, None)
 
 # Solve puzzle
 new_node.forward_check()
 
-print("Attempted " + str(possible_answers_attempts) + " times to solve puzzle")
+# Stop timer
+finish_time = time()
+execution_duration = finish_time - start_time
+
+# Print solution performance results
+print("\n\nAttempted " + str(possible_answers_attempts) + " times to solve puzzle")
+print("Puzzle Solution Search took: " + str("{:.4f}".format(execution_duration)) + " seconds")
