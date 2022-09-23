@@ -11,13 +11,6 @@ RANGE_2 = [3, 4, 5]
 RANGE_3 = [6, 7, 8]
 
 column_names = range(PUZZLE_SIZE)
-# sudoku_from_csv = pd.read_csv("Sudoku - Solved.csv", names=column_names)
-sudoku_from_csv = pd.read_csv("Sudoku - Canva.csv", names=column_names)
-# sudoku_from_csv = pd.read_csv("Sudoku - Easy.csv", names=column_names)
-# sudoku_from_csv = pd.read_csv("Sudoku - Medium.csv", names=column_names)  # Fail
-# sudoku_from_csv = pd.read_csv("Sudoku - Hard.csv", names=column_names)  # Fail
-# sudoku_from_csv = pd.read_csv("Sudoku - Evil.csv", names=column_names)  # Fail
-# sudoku_from_csv = pd.read_csv("Sudoku - World Hardest Sudoku.csv", names=column_names)
 possible_answers_attempts = 0
 
 
@@ -105,7 +98,7 @@ class SudokuStateNode:
             for y in range(PUZZLE_SIZE):
                 print("Domain for " + str(x) + "," + str(y) + " --> " + str(self.sudoku_state[x][y]))
 
-    def forward_check(self):
+    def forward_check_and_mvc_search(self):
         global possible_answers_attempts
 
         solved_puzzle_flag = 1
@@ -114,10 +107,8 @@ class SudokuStateNode:
         for x in range(PUZZLE_SIZE):
             for y in range(PUZZLE_SIZE):
                 self.wipe_matches_for_position(x, y)
-                # print(x, ",", y, "-->", self.sudoku_state[x][y])
 
                 if len(self.sudoku_state[x][y]) == 0:
-                    # print("Found empty variable at " + str(x) + "," + str(y))
                     solved_puzzle_flag = 2
 
                 elif len(self.sudoku_state[x][y]) > 1 and solved_puzzle_flag != 0:
@@ -149,7 +140,7 @@ class SudokuStateNode:
                 self.children.append(option_node)
 
                 # Do Forward Checking and evaluate if puzzle is completed for current option node
-                solved_puzzle_flag = option_node.forward_check()
+                solved_puzzle_flag = option_node.forward_check_and_mvc_search()
                 if solved_puzzle_flag == 1:
                     break
                 if self.parent is None and solved_puzzle_flag == 2:
@@ -181,9 +172,7 @@ def create_sudoku_empty_matrix():
     return sudoku_empty_matrix
 
 
-def create_sudoku_matrix_from_csv():
-    global sudoku_from_csv
-
+def create_sudoku_matrix_from_csv(sudoku_from_csv):
     temp_matrix = create_sudoku_empty_matrix()
     initial_matrix = copy.deepcopy(temp_matrix)
 
@@ -199,9 +188,9 @@ def create_sudoku_matrix_from_csv():
 
 def print_formatted_sudoku(matrix, solved):
     if solved == 1:
-        print("\n\n******** SOLVED SUDOKU PUZZLE *******")
+        print("\n******** SOLVED SUDOKU PUZZLE *******")
     else:
-        print("\n\n******* INITIAL SUDOKU PUZZLE *******")
+        print("******* INITIAL SUDOKU PUZZLE *******")
 
     for y in range(PUZZLE_SIZE):
         for char in range(PUZZLE_SIZE):
@@ -223,25 +212,66 @@ def print_formatted_sudoku(matrix, solved):
     print()
 
 
-# Create sudoku puzzle from CSV file
-sudoku_matrix = create_sudoku_matrix_from_csv()
+def get_csv_for_difficulty_level(selected_level):
+    sudoku_from_csv = None
+    print("\n*********** ", end='')
 
-# Print unsolved sudoku puzzle
-print_formatted_sudoku(sudoku_matrix, 0)
+    if selected_level == 0:
+        print("SOLVED LEVEL ", end='')
+        sudoku_from_csv = pd.read_csv("Sudoku - Solved.csv", names=column_names)
+    if selected_level == 1:
+        print("EASY LEVEL ", end='')
+        sudoku_from_csv = pd.read_csv("Sudoku - Easy.csv", names=column_names)
+    if selected_level == 2:
+        print("MEDIUM LEVEL ", end='')
+        sudoku_from_csv = pd.read_csv("Sudoku - Medium.csv", names=column_names)
+    if selected_level == 3:
+        print("HARD LEVEL", end='')
+        sudoku_from_csv = pd.read_csv("Sudoku - Hard.csv", names=column_names)
+    if selected_level == 4:
+        print("EVIL LEVEL ", end='')
+        sudoku_from_csv = pd.read_csv("Sudoku - Evil.csv", names=column_names)
+    if selected_level == 5:
+        print("WORLD'S HARDEST SUDOKU ", end='')
+        sudoku_from_csv = pd.read_csv("Sudoku - World Hardest Sudoku.csv", names=column_names)
+    if selected_level == 6:
+        print("PUZZLE IN CANVA", end='')
+        sudoku_from_csv = pd.read_csv("Sudoku - Canva.csv", names=column_names)
 
-# Initialize timer for solution
-start_time = time()
+    print(" ***********")
+    return sudoku_from_csv
 
-# Create root node with initial sudoku state
-new_node = SudokuStateNode(sudoku_matrix, [], None, None)
 
-# Solve puzzle
-new_node.forward_check()
+def solve_sudoku(selected_level):
+    # Get CSV file for selected difficulty level
+    sudoku_from_csv = get_csv_for_difficulty_level(selected_level)
 
-# Stop timer
-finish_time = time()
-execution_duration = finish_time - start_time
+    # Create sudoku puzzle from CSV file
+    sudoku_matrix = create_sudoku_matrix_from_csv(sudoku_from_csv)
 
-# Print solution performance results
-print("\n\nAttempted " + str(possible_answers_attempts) + " times to solve puzzle")
-print("Puzzle Solution Search took: " + str("{:.4f}".format(execution_duration)) + " seconds")
+    # Print unsolved sudoku puzzle
+    print_formatted_sudoku(sudoku_matrix, 0)
+
+    # Initialize timer for solution
+    start_time = time()
+
+    # Create root node with initial sudoku state
+    new_node = SudokuStateNode(sudoku_matrix, [], None, None)
+
+    # Solve puzzle
+    new_node.forward_check_and_mvc_search()
+
+    # Stop timer
+    finish_time = time()
+    execution_duration = finish_time - start_time
+
+    # Print solution performance results
+    print("\n" + str(possible_answers_attempts) + " attempts done to solve puzzle")
+    print("Puzzle Solution Search took: " + str("{:.4f}".format(execution_duration)) + " seconds")
+
+
+levels_list = [1, 2, 3]
+
+for level in levels_list:
+    solve_sudoku(level)
+
