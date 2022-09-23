@@ -8,6 +8,8 @@ from time import time
 # Benjamín Ávila Rosas
 # Sept, 2022.
 
+# CODE EXPLANATION VIDEO --> https://youtu.be/4GkxgBKP9sg
+
 PUZZLE_REGION_SIZE = 3
 PUZZLE_SIZE = PUZZLE_REGION_SIZE * PUZZLE_REGION_SIZE
 SUDOKU_DOMAIN = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -318,7 +320,7 @@ def get_range_for_index(index):
 # 4 --> EVIL LEVEL
 # 5 --> WORLD'S HARDEST SUDOKU (MIGHT TAKE A WHILE, DO NOT WORRY)
 # 6 --> PUZZLE GIVEN ON CANVA AS EXAMPLE BY TEACHER
-levels_list = [1, 2, 3, 5]
+levels_list = [1, 2, 3, 4, 5, 6]
 
 # Run Sudoku solver for every level selected
 for level in levels_list:
